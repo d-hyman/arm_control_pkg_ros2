@@ -1,0 +1,54 @@
+# NOTE: ROS 2 is strict about types. Write decimals as 1.0 not 1,
+# and keep every value in a float array a float.
+
+sorter_node:
+  ros__parameters:
+    joint_names: ["base_waist_joint", "waist_link1_joint", "link1-2",
+                  "link2_3", "gripper_arm_joint", "gear_gripper_link"]
+
+    # --- Sorting rules (YOLO/COCO class names) ---
+    left_classes: ["bottle", "cup"]
+    right_classes: ["apple", "orange", "banana"]
+
+    # --- Detection filtering ---
+    confidence_threshold: 0.5
+    frames_to_confirm: 5          # same class N frames in a row before acting
+    image_width: 320              # ESP32 starts at QVGA (320x240)
+    image_height: 240
+    center_tolerance: 0.5         # |rel_x|,|rel_y| must be below this (1.0 = whole frame)
+    cooldown: 2.0                 # seconds to ignore detections after a sort
+
+    # --- Poses: radians for the first 5 joints (gripper is separate) ---
+    # PLACEHOLDERS! Find real values with joint_state_publisher_gui (see README notes).
+    pose_home:       [1.57, 1.57, 1.57, 1.57, 1.57]
+    pose_above_pick: [1.57, 1.20, 1.00, 1.57, 1.57]
+    pose_pick:       [1.57, 0.90, 0.80, 1.57, 1.57]
+    pose_left_drop:  [2.60, 1.30, 1.20, 1.57, 1.57]
+    pose_right_drop: [0.50, 1.30, 1.20, 1.57, 1.57]
+    gripper_open: 0.3
+    gripper_closed: 1.2
+
+    move_duration: 1.2            # seconds per arm move
+    grip_duration: 0.6            # seconds to open/close gripper
+
+servo_driver_node:
+  ros__parameters:
+    mode: "sim"                   # "sim" or "serial" (overridable from launch)
+    serial_port: "/dev/ttyUSB0"
+    baud_rate: 115200
+    joint_names: ["base_waist_joint", "waist_link1_joint", "link1-2",
+                  "link2_3", "gripper_arm_joint", "gear_gripper_link"]
+    # servo_deg = offset + direction * degrees(joint_rad), then clamped
+    # A servo mounted backwards: direction -1, offset 180.0
+    offsets_deg: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    directions:  [1, 1, 1, 1, 1, 1]
+    min_deg: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    max_deg: [180.0, 180.0, 180.0, 180.0, 180.0, 180.0]
+
+fake_detector_node:
+  ros__parameters:
+    classes: ["bottle", "apple", "cell phone"]   # "cell phone" has no bin -> ignored
+    hold_time: 3.0
+    gap_time: 2.0
+    image_width: 320
+    image_height: 240
